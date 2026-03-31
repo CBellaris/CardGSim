@@ -1,0 +1,19 @@
+{
+    "name": "Cards.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Cards.Unity",
+        "Cards.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

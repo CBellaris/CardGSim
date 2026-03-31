@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:yousandi.cn,2023:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d7c59d5a0bbd449fab6cb50b55d02f97, type: 3}
+  m_Name: MyfirstLevel
+  m_EditorClassIdentifier: 
+  levelName: MyFirstLevel
+  zones:
+  - zoneId: 0
+    zoneName: PlayerDrawPile
+    layoutType: 1
+    spacingOrOffset: 0.02
+    layoutAxis: {x: 0, y: 0, z: 0}
+  - zoneId: 1
+    zoneName: PlayerDiscardPile
+    layoutType: 1
+    spacingOrOffset: 0.02
+    layoutAxis: {x: 0, y: 0, z: 0}
+  - zoneId: 2
+    zoneName: PlayerExhaustPile
+    layoutType: 1
+    spacingOrOffset: 0.02
+    layoutAxis: {x: 0, y: 0, z: 0}
+  - zoneId: 3
+    zoneName: PlayerHand
+    layoutType: 2
+    spacingOrOffset: 1.1
+    layoutAxis: {x: 1, y: 0, z: 0}
+  - zoneId: 4
+    zoneName: PlayerBoard
+    layoutType: 2
+    spacingOrOffset: 1.1
+    layoutAxis: {x: 1, y: 0, z: 0}
+  - zoneId: 5
+    zoneName: EnemyBoard
+    layoutType: 2
+    spacingOrOffset: 1.1
+    layoutAxis: {x: 1, y: 0, z: 0}
