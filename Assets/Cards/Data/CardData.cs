@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Cards.Data
 {
     [CreateAssetMenu(fileName = "NewCardData", menuName = "Cards/CardData")]
-    public class CardData : ScriptableObject
+    public class CardData : ScriptableObject, ICardData
     {
         [Header("Basic Info")]
         public string CardId;
@@ -32,5 +32,18 @@ namespace Cards.Data
         [Header("Card Effects")]
         [SerializeReference]
         public List<Cards.Effects.ICardEffect> PlayEffects = new List<Cards.Effects.ICardEffect>();
+
+        // --- ICardData 显式实现（字段→属性桥接） ---
+        string ICardData.CardId => CardId;
+        string ICardData.CardName => CardName;
+        int ICardData.Cost => Cost;
+        int ICardData.Health => Health;
+        int ICardData.ArmorClass => ArmorClass;
+        int ICardData.AttackBonus => AttackBonus;
+        int ICardData.Attack => Attack;
+        int ICardData.DiceCount => DiceCount;
+        int ICardData.DiceSides => DiceSides;
+        IReadOnlyList<CardTag> ICardData.Tags => Tags;
+        IReadOnlyList<Cards.Effects.ICardEffect> ICardData.PlayEffects => PlayEffects;
     }
 }

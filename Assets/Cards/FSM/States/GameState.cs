@@ -1,6 +1,7 @@
 using UnityEngine;
 
 using Cards.Core;
+using Cards.Services;
 
 namespace Cards.FSM.States
 {
@@ -17,6 +18,9 @@ namespace Cards.FSM.States
         {
             // Debug.Log($"[FSM] Entering {this.GetType().Name}");
         }
+
+        protected GameContext Context => gm != null ? gm.Context : null;
+        protected bool IsActionQueueBusy => Context?.Actions?.IsProcessing == true;
 
         public virtual void Update()
         {

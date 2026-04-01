@@ -1,11 +1,12 @@
+using System;
 using UnityEngine;
 using Cards.Core;
 using Cards.Core.Events;
 using Cards.Zones;
-using Cards.Actions;
 using Cards.Rules.Interactions;
 using Cards.FSM.States;
 using System.Collections.Generic;
+using Cards.Services;
 
 namespace Cards.Rules.Handlers
 {
@@ -13,32 +14,43 @@ namespace Cards.Rules.Handlers
     /// 处理玩家点击卡牌（尝试打出）的逻辑
     /// 解耦自 GameManager
     /// </summary>
-    public static class CardPlayHandler
+    public class CardPlayHandler : IDisposable
     {
-        public static void Initialize()
+        private readonly GameContext context;
+        private readonly Cards.FSM.GameStateMachine stateMachine;
+        private readonly EventToken subscription;
+
+        public CardPlayHandler(GameContext context, Cards.FSM.GameStateMachine stateMachine)
         {
-            EventBus.Subscribe<CardClickedEvent>(OnCardClicked);
+            this.context = context;
+            this.stateMachine = stateMachine;
+            subscription = context?.Events?.Subscribe<CardClickedEvent>(OnCardClicked);
         }
 
-        private static void OnCardClicked(CardClickedEvent evt)
+        public void Dispose()
+        {
+            context?.Events?.Unsubscribe(subscription);
+        }
+
+        private void OnCardClicked(CardClickedEvent evt)
         {
             // 判断当前是否是玩家主阶段，如果不是，禁止出牌
             // 以后如果有专门的状态机管理类，可以从那里获取，目前通过GameManager实例获取状态
-            if (GameManager.Instance != null && !(GameManager.Instance.StateMachine.CurrentState is PlayerMainPhaseState))
+            if (stateMachine == null || !(stateMachine.CurrentState is PlayerMainPhaseState))
             {
                 Debug.Log("当前不是出牌阶段，无法打出卡牌。");
                 return;
             }
 
             // 简单加一个判断：如果队列正在执行关键动画，暂时不允许打牌，防止玩家在动画期间乱点
-            if (ActionManager.Instance.IsExecuting) return;
+            if (context?.Actions?.IsProcessing == true) return;
 
-            CardZone handZone = ZoneRegistry.Get(ZoneId.PlayerHand);
+            CardZone handZone = context?.Zones?.Get(ZoneId.PlayerHand);
 
             if (handZone != null && handZone.Contains(evt.Card))
             {
                 ZoneId targetBoardId = evt.Card.Owner.GetBoardZoneId();
-                CardZone targetBoardZone = ZoneRegistry.Get(targetBoardId);
+                CardZone targetBoardZone = context?.Zones?.Get(targetBoardId);
 
                 if (targetBoardZone == null)
                 {
@@ -47,11 +59,12 @@ namespace Cards.Rules.Handlers
                 }
 
                 // 1. 优先从对方战场选择目标；如果还未分阵营完成，则退化为从任意战场选择一个有效目标。
-                CardEntity target = SelectTarget(evt.Card);
+                CardInstance target = SelectTarget(evt.Card);
 
                 // 2. 构造交互请求：卡牌从 手牌区 -> 战场区
                 InteractionRequest request = new InteractionRequest
                 {
+                    Context = context,
                     SourceCard = evt.Card,
                     SourceZone = handZone,
                     SourceZoneId = ZoneId.PlayerHand,
@@ -61,16 +74,16 @@ namespace Cards.Rules.Handlers
                 };
 
                 // 3. 引擎处理请求
-                RuleEngine.ProcessInteraction(request);
+                context?.Rules?.ProcessInteraction(request);
                 
-                Debug.Log($"尝试打出 {evt.Card.CurrentCardData.CardName}, 请求处理结果: Cancelled={request.IsCancelled}, Handled={request.IsHandled}");
+                Debug.Log($"尝试打出 {evt.Card.Data?.CardName}, 请求处理结果: Cancelled={request.IsCancelled}, Handled={request.IsHandled}");
             }
         }
 
-        private static CardEntity SelectTarget(CardEntity sourceCard)
+        private CardInstance SelectTarget(CardInstance sourceCard)
         {
             ZoneId preferredZoneId = sourceCard.Owner.GetOpponent().GetBoardZoneId();
-            CardEntity preferredTarget = GetRandomTargetFromZones(ZoneRegistry.GetAll(preferredZoneId), sourceCard);
+            CardInstance preferredTarget = GetRandomTargetFromZones(context?.Zones?.GetAll(preferredZoneId), sourceCard);
             if (preferredTarget != null)
             {
                 return preferredTarget;
@@ -78,7 +91,7 @@ namespace Cards.Rules.Handlers
 
             foreach (ZoneId boardZoneId in new[] { ZoneId.PlayerBoard, ZoneId.EnemyBoard })
             {
-                CardEntity fallbackTarget = GetRandomTargetFromZones(ZoneRegistry.GetAll(boardZoneId), sourceCard);
+                CardInstance fallbackTarget = GetRandomTargetFromZones(context?.Zones?.GetAll(boardZoneId), sourceCard);
                 if (fallbackTarget != null)
                 {
                     return fallbackTarget;
@@ -88,16 +101,16 @@ namespace Cards.Rules.Handlers
             return null;
         }
 
-        private static CardEntity GetRandomTargetFromZones(IReadOnlyList<CardZone> zones, CardEntity sourceCard)
+        private CardInstance GetRandomTargetFromZones(IReadOnlyList<CardZone> zones, CardInstance sourceCard)
         {
             if (zones == null || zones.Count == 0) return null;
 
-            List<CardEntity> candidates = new List<CardEntity>();
+            List<CardInstance> candidates = new List<CardInstance>();
             foreach (CardZone zone in zones)
             {
                 if (zone == null) continue;
 
-                foreach (CardEntity card in zone.Cards)
+                foreach (CardInstance card in zone.Cards)
                 {
                     if (card != null && card != sourceCard)
                     {
@@ -107,7 +120,9 @@ namespace Cards.Rules.Handlers
             }
 
             if (candidates.Count == 0) return null;
-            return candidates[Random.Range(0, candidates.Count)];
+            IRandom random = context?.Random;
+            int index = random != null ? random.Range(0, candidates.Count) : UnityEngine.Random.Range(0, candidates.Count);
+            return candidates[index];
         }
     }
 }

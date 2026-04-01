@@ -46,9 +46,9 @@ namespace Cards.FSM.States
         {
             base.Update();
 
-            if (Cards.Actions.ActionManager.Instance.IsExecuting) return;
+            if (IsActionQueueBusy) return;
 
-            delayTimer -= Time.deltaTime;
+            delayTimer -= Context?.Time?.DeltaTime ?? 0f;
             if (delayTimer <= 0)
             {
                 // 敌人行动完毕，切回玩家回合开始

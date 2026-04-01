@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using Cards.Zones;
 using Cards.Core;
+using Cards.Services;
 
 namespace Cards.Actions
 {
     public class ReshuffleAction : GameAction
     {
-        private CardZone drawPile;
-        private CardZone discardPile;
+        private readonly CardZone drawPile;
+        private readonly CardZone discardPile;
+        private int recycledCount;
+        private float animationScale = 1f;
 
         public ReshuffleAction(CardZone drawPile, CardZone discardPile)
         {
@@ -17,41 +20,56 @@ namespace Cards.Actions
             this.discardPile = discardPile;
         }
 
-        public override IEnumerator ExecuteRoutine()
+        public override void Execute(GameContext ctx)
         {
-            Debug.Log("[Action] 抽牌堆为空，开始将弃牌堆洗入抽牌堆...");
+            animationScale = ResolveAnimationScale(ctx);
+            Log(ctx, "[Action] 抽牌堆为空，开始将弃牌堆洗入抽牌堆...");
 
             var recycledCards = discardPile.TakeAllCards();
-            
-            // 表现洗牌动画：一张一张飞回抽牌堆
+            recycledCount = recycledCards.Count;
+
             for (int i = recycledCards.Count - 1; i >= 0; i--)
             {
-                CardEntity card = recycledCards[i];
-                // 模型重置逻辑：因为从弃牌堆重新回到卡组，重置其血量状态
+                CardInstance card = recycledCards[i];
                 if (card.Model != null)
                 {
                     card.Model.ResetStats();
                 }
 
-                // 临时将牌放入抽牌堆，播放飞过去的动画
-                drawPile.AddCard(card, true);
-                yield return new WaitForSeconds(0.1f); // 洗牌飞行的间隔
+                drawPile.AddCard(card);
             }
 
-            // 飞行完毕后，稍微停顿一下
-            yield return new WaitForSeconds(0.5f);
+            drawPile.Shuffle(ctx?.Random);
+            Log(ctx, "[Action] 洗牌完成！");
+        }
 
-            // 实际的数据洗牌
-            drawPile.Shuffle();
-            
-            // 重新排列表现
-            //drawPile.UpdatePileVisuals(true);
-            
-            // 等待洗牌排列动画完成
-            yield return new WaitForSeconds(0.3f); 
+        public override IEnumerator AnimateRoutine()
+        {
+            for (int i = 0; i < recycledCount; i++)
+            {
+                yield return new WaitForSeconds(0.1f * animationScale);
+            }
 
-            Debug.Log("[Action] 洗牌完成！");
-            IsCompleted = true;
+            yield return new WaitForSeconds(0.5f * animationScale);
+            yield return new WaitForSeconds(0.3f * animationScale);
+        }
+
+        private static void Log(GameContext ctx, string message)
+        {
+            if (ctx?.Logger != null)
+            {
+                ctx.Logger.Log(message);
+            }
+            else
+            {
+                Debug.Log(message);
+            }
+        }
+
+        private static float ResolveAnimationScale(GameContext ctx)
+        {
+            float scale = ctx?.AnimationPolicy?.TimeScale ?? 1f;
+            return scale > 0f ? scale : 1f;
         }
     }
 }

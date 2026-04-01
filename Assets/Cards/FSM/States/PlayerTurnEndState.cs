@@ -21,7 +21,7 @@ namespace Cards.FSM.States
             base.Update();
 
             // 等待结算动画完毕
-            if (!Cards.Actions.ActionManager.Instance.IsExecuting)
+            if (!IsActionQueueBusy)
             {
                 gm.StateMachine.ChangeState(gm.EnemyTurn);
             }

@@ -14,7 +14,7 @@ namespace Cards.FSM.States
             Debug.Log("[PlayerTurnStartState] 玩家回合开始...");
 
             // 回合开始时抽1张牌（可根据需求调整）
-            ActionManager.Instance.AddAction(new DrawCardAction());
+            Context?.Actions?.Enqueue(new DrawCardAction());
 
             // TODO: 在这里处理“回合开始时触发的Buff/Debuff（如中毒掉血）”
             // TODO: 在这里重置玩家的法力值/行动力
@@ -25,7 +25,7 @@ namespace Cards.FSM.States
             base.Update();
 
             // 等待回合开始的结算动画和抽牌动画完成
-            if (!ActionManager.Instance.IsExecuting)
+            if (!IsActionQueueBusy)
             {
                 gm.StateMachine.ChangeState(gm.PlayerMainPhase);
             }

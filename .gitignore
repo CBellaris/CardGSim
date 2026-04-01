@@ -1,3 +1,23 @@
 *.meta
 .DS_Store
 **/.DS_Store
+*.cursorignore
+*.csproj
+*.sln
+
+
+# 1. 忽略根目录下的所有文件和文件夹
+/*
+
+# 2. 跟踪 .gitignore 文件自身（强烈建议，否则你的忽略规则无法提交）
+!/.gitignore
+
+# 3. 允许 Git 进入 Assets 目录（解除对父目录的忽略）
+!/Assets/
+
+# 4. 忽略 Assets 目录下的所有内容
+/Assets/*
+
+# 5. 解除对 Cards 目录的忽略。
+# 因为此时没有全局规则干扰它内部的文件，所以它的所有子文件/子文件夹都会被正常跟踪
+!/Assets/Cards

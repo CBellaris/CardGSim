@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine;
 using Cards.Core;
 
 namespace Cards.Zones.Layouts
@@ -12,8 +11,8 @@ namespace Cards.Zones.Layouts
         /// </summary>
         bool SupportsIncrementalAdd { get; }
 
-        void Arrange(List<CardEntity> cards, bool useAnimation = false);
-        
-        void OnCardAdded(CardEntity card, int index, bool useAnimation = false);
+        void Arrange(IReadOnlyList<CardEntityView> cards, bool useAnimation = false);
+
+        void OnCardAdded(CardEntityView card, int index, bool useAnimation = false);
     }
 }

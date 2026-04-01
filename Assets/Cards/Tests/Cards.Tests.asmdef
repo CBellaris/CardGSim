@@ -3,6 +3,7 @@
     "rootNamespace": "",
     "references": [
         "Cards.Runtime",
+        "Cards.Unity",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

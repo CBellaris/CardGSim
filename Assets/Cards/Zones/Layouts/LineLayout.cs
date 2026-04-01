@@ -19,7 +19,7 @@ namespace Cards.Zones.Layouts
             this.localOffsetAxis = axis.normalized;
         }
 
-        public void Arrange(List<CardEntity> cards, bool useAnimation = false)
+        public void Arrange(IReadOnlyList<CardEntityView> cards, bool useAnimation = false)
         {
             if (centerTransform == null) return;
 
@@ -45,7 +45,7 @@ namespace Cards.Zones.Layouts
             }
         }
 
-        public void OnCardAdded(CardEntity card, int index, bool useAnimation = false)
+        public void OnCardAdded(CardEntityView card, int index, bool useAnimation = false)
         {
             // 对于线性布局，加牌通常需要整体重新排列，所以这里可以留空，
             // 依赖区域 (CardZone) 调用总的 Arrange 方法

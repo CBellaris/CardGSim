@@ -17,7 +17,7 @@ namespace Cards.Zones.Layouts
             this.stackZOffset = offset;
         }
 
-        public void Arrange(List<CardEntity> cards, bool useAnimation = false)
+        public void Arrange(IReadOnlyList<CardEntityView> cards, bool useAnimation = false)
         {
             if (baseTransform == null) return;
 
@@ -38,7 +38,7 @@ namespace Cards.Zones.Layouts
             }
         }
 
-        public void OnCardAdded(CardEntity card, int index, bool useAnimation = false)
+        public void OnCardAdded(CardEntityView card, int index, bool useAnimation = false)
         {
             if (baseTransform == null) return;
 

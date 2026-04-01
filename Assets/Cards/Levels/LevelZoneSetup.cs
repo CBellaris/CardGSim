@@ -5,6 +5,7 @@ using UnityEngine;
 using Cards.Zones;
 using Cards.Zones.Layouts;
 using Cards.Core;
+using Cards.Services;
 
 namespace Cards.Levels
 {
@@ -35,8 +36,9 @@ namespace Cards.Levels
         // 运行时按“区域类型”和“区域实例名”双索引，允许同一个 ZoneId 存在多个实例。
         private Dictionary<ZoneId, List<CardZone>> activeZonesById = new Dictionary<ZoneId, List<CardZone>>();
         private Dictionary<string, CardZone> activeZonesByName = new Dictionary<string, CardZone>();
+        private readonly List<ZoneLayoutView> activeZoneViews = new List<ZoneLayoutView>();
 
-        public void InitializeZones()
+        public void InitializeZones(GameContext context)
         {
             if (levelConfig == null)
             {
@@ -46,6 +48,7 @@ namespace Cards.Levels
 
             activeZonesById.Clear();
             activeZonesByName.Clear();
+            activeZoneViews.Clear();
 
             foreach (var zoneData in levelConfig.zones)
             {
@@ -70,7 +73,7 @@ namespace Cards.Levels
                     layout = new LineLayout(anchor, zoneData.spacingOrOffset, zoneData.layoutAxis);
                 }
 
-                CardZone newZone = new CardZone(zoneData.zoneId, zoneData.zoneName, layout);
+                CardZone newZone = new CardZone(zoneData.zoneId, zoneData.zoneName);
 
                 if (!activeZonesById.TryGetValue(zoneData.zoneId, out List<CardZone> zonesOfType))
                 {
@@ -85,7 +88,20 @@ namespace Cards.Levels
                     activeZonesByName.Add(zoneData.zoneName, newZone);
                 }
 
+                if (layout != null)
+                {
+                    activeZoneViews.Add(new ZoneLayoutView(newZone, layout, context));
+                }
+
                 Debug.Log($"[LevelSetup] 已初始化区域: {zoneData.zoneId} ({zoneData.zoneName}), Layout: {zoneData.layoutType}");
+            }
+        }
+
+        public void RegisterCardView(CardInstance card, CardEntityView view)
+        {
+            foreach (ZoneLayoutView zoneView in activeZoneViews)
+            {
+                zoneView.RegisterCardView(card, view);
             }
         }
 

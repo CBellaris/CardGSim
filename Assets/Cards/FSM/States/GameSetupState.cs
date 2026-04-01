@@ -23,7 +23,7 @@ namespace Cards.FSM.States
             // 3. 游戏开始，抽取初始手牌 (比如3张)
             for (int i = 0; i < 3; i++)
             {
-                ActionManager.Instance.AddAction(new DrawCardAction());
+                Context?.Actions?.Enqueue(new DrawCardAction());
             }
 
             // 初始化完成后，自动流转到玩家回合开始阶段
@@ -35,7 +35,7 @@ namespace Cards.FSM.States
             base.Update();
 
             // 等待所有的发牌动画/逻辑执行完毕
-            if (!ActionManager.Instance.IsExecuting)
+            if (!IsActionQueueBusy)
             {
                 gm.StateMachine.ChangeState(gm.PlayerTurnStart);
             }

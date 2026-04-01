@@ -2,43 +2,45 @@ using System.Collections;
 using UnityEngine;
 using Cards.Zones;
 using Cards.Core;
+using Cards.Services;
 
 namespace Cards.Actions
 {
     public class DrawCardAction : GameAction
     {
-        public override IEnumerator ExecuteRoutine()
+        private float animationScale = 1f;
+
+        public override void Execute(GameContext ctx)
         {
-            CardZone drawPile = ZoneRegistry.Get(ZoneId.PlayerDrawPile);
-            CardZone discardPile = ZoneRegistry.Get(ZoneId.PlayerDiscardPile);
-            CardZone handZone = ZoneRegistry.Get(ZoneId.PlayerHand);
+            animationScale = ResolveAnimationScale(ctx);
+            CardZone drawPile = ctx?.Zones?.Get(ZoneId.PlayerDrawPile);
+            CardZone discardPile = ctx?.Zones?.Get(ZoneId.PlayerDiscardPile);
+            CardZone handZone = ctx?.Zones?.Get(ZoneId.PlayerHand);
 
             if (drawPile == null || discardPile == null || handZone == null)
             {
-                Debug.LogError("[DrawCardAction] 找不到必要的区域！");
-                IsCompleted = true;
-                yield break;
+                LogError(ctx, "[DrawCardAction] 找不到必要的区域！");
+                return;
             }
 
             if (drawPile.IsEmpty)
             {
                 if (discardPile.IsEmpty)
                 {
-                    Debug.Log("抽牌堆和弃牌堆都为空，无法抽牌！");
-                    IsCompleted = true;
-                    yield break;
+                    Log(ctx, "抽牌堆和弃牌堆都为空，无法抽牌！");
+                    return;
                 }
 
-                ActionManager.Instance.AddAction(new ReshuffleAction(drawPile, discardPile));
-                ActionManager.Instance.AddAction(new DrawCardAction());
-                IsCompleted = true;
-                yield break;
+                Enqueue(ctx, new ReshuffleAction(drawPile, discardPile));
+                Enqueue(ctx, new DrawCardAction());
+                return;
             }
 
-            CardEntity drawnCard = drawPile.DrawTopCard();
+            CardInstance drawnCard = drawPile.DrawTopCard();
 
             var request = new Cards.Rules.Interactions.InteractionRequest
             {
+                Context = ctx,
                 Type = Cards.Rules.Interactions.InteractionType.ZoneTransfer,
                 SourceCard = drawnCard,
                 SourceZone = drawPile,
@@ -47,13 +49,49 @@ namespace Cards.Actions
                 TargetZoneId = ZoneId.PlayerHand
             };
 
-            Cards.Rules.Interactions.RuleEngine.ProcessInteraction(request);
+            ctx?.Rules?.ProcessInteraction(request);
 
-            Debug.Log($"[Action] 抽了1张牌: {drawnCard.CurrentCardData.CardName}，抽牌堆剩余: {drawPile.Count}");
+            Log(ctx, $"[Action] 抽了1张牌: {drawnCard.Data?.CardName}，抽牌堆剩余: {drawPile.Count}");
+        }
 
-            yield return new WaitForSeconds(0.35f);
+        public override IEnumerator AnimateRoutine()
+        {
+            yield return new WaitForSeconds(0.35f * animationScale);
+        }
 
-            IsCompleted = true;
+        private static void Enqueue(GameContext ctx, GameAction action)
+        {
+            ctx?.Actions?.Enqueue(action);
+        }
+
+        private static void Log(GameContext ctx, string message)
+        {
+            if (ctx?.Logger != null)
+            {
+                ctx.Logger.Log(message);
+            }
+            else
+            {
+                Debug.Log(message);
+            }
+        }
+
+        private static void LogError(GameContext ctx, string message)
+        {
+            if (ctx?.Logger != null)
+            {
+                ctx.Logger.LogError(message);
+            }
+            else
+            {
+                Debug.LogError(message);
+            }
+        }
+
+        private static float ResolveAnimationScale(GameContext ctx)
+        {
+            float scale = ctx?.AnimationPolicy?.TimeScale ?? 1f;
+            return scale > 0f ? scale : 1f;
         }
     }
 }

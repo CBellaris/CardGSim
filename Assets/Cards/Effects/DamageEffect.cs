@@ -4,7 +4,6 @@ using UnityEngine;
 using Cards.Rules.Interactions;
 using Cards.Actions;
 using Cards.Core;
-
 namespace Cards.Effects
 {
     [Serializable]
@@ -54,19 +53,26 @@ namespace Cards.Effects
                 return actions;
             }
 
-            ICombatable targetModel = request.TargetEntity.Model;
-            string sourceName = request.SourceCard.CurrentCardData.CardName;
+            ICombatable targetModel = request.TargetEntity;
+            string sourceName = request.SourceCard.Data?.CardName ?? "Unknown";
             string targetName = targetModel.CombatName;
+
+            CombatResolver combat = request.Context?.Combat;
+            if (combat == null)
+            {
+                Debug.LogWarning("[DamageEffect] 缺少 CombatResolver，无法执行伤害效果。");
+                return actions;
+            }
 
             if (useAttackRoll)
             {
-                var roll = CombatResolver.RollAttack(attackBonus, targetModel.ArmorClass);
+                var roll = combat.RollAttack(attackBonus, targetModel.ArmorClass);
                 Debug.Log($"[Effect] {sourceName} attacks {targetName}! Roll: {roll.NaturalRoll} + {attackBonus} = {roll.TotalAttack} vs AC {roll.TargetAC}");
 
                 if (CombatResolver.IsHit(roll.Result))
                 {
                     bool isCrit = roll.Result == AttackResult.CriticalHit;
-                    int damage = CombatResolver.RollDamage(diceCount, diceSides, attackValue, isCrit);
+                    int damage = combat.RollDamage(diceCount, diceSides, attackValue, isCrit);
                     Debug.Log($"[Effect] Hit{(isCrit ? " (CRITICAL)" : "")}! Damage: {damage}");
                     actions.Add(new DamageAction(targetModel, damage, sourceName));
                 }
@@ -77,7 +83,7 @@ namespace Cards.Effects
             }
             else
             {
-                int damage = CombatResolver.RollDamage(diceCount, diceSides, attackValue, false);
+                int damage = combat.RollDamage(diceCount, diceSides, attackValue, false);
                 Debug.Log($"[Effect] Direct Hit! Damage: {damage}");
                 actions.Add(new DamageAction(targetModel, damage, sourceName));
             }

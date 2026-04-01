@@ -1,6 +1,7 @@
 using UnityEngine;
 using Cards.Actions;
 using Cards.Core;
+using Cards.Services;
 
 namespace Cards.FSM.States
 {
@@ -20,16 +21,16 @@ namespace Cards.FSM.States
             base.Update();
 
             // 在 ActionManager 执行动画（比如伤害结算、抽牌）期间，锁定玩家输入
-            if (ActionManager.Instance.IsExecuting) return;
+            if (IsActionQueueBusy) return;
 
             // 监听空格抽牌（测试用）
-            if (Input.GetKeyDown(KeyCode.Space))
+            if (Context?.Input?.WasPressed(GameInputAction.DrawCard) == true)
             {
-                ActionManager.Instance.AddAction(new DrawCardAction());
+                Context?.Actions?.Enqueue(new DrawCardAction());
             }
 
             // 监听回车键结束回合（测试用，后续可改为 UI 按钮事件）
-            if (Input.GetKeyDown(KeyCode.Return))
+            if (Context?.Input?.WasPressed(GameInputAction.EndTurn) == true)
             {
                 gm.StateMachine.ChangeState(gm.PlayerTurnEnd);
             }

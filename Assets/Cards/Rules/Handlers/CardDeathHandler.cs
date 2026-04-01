@@ -1,6 +1,8 @@
+using System;
 using UnityEngine;
 using Cards.Core;
 using Cards.Core.Events;
+using Cards.Services;
 using Cards.Zones;
 
 namespace Cards.Rules.Handlers
@@ -9,27 +11,36 @@ namespace Cards.Rules.Handlers
     /// 处理场上卡牌死亡的逻辑
     /// 解耦自 GameManager
     /// </summary>
-    public static class CardDeathHandler
+    public class CardDeathHandler : IDisposable
     {
-        public static void Initialize()
+        private readonly GameContext context;
+        private readonly EventToken subscription;
+
+        public CardDeathHandler(GameContext context)
         {
-            EventBus.Subscribe<CardDiedEvent>(OnCardDied);
+            this.context = context;
+            subscription = context?.Events?.Subscribe<CardDiedEvent>(OnCardDied);
         }
 
-        private static void OnCardDied(CardDiedEvent evt)
+        public void Dispose()
+        {
+            context?.Events?.Unsubscribe(subscription);
+        }
+
+        private void OnCardDied(CardDiedEvent evt)
         {
             CardZone boardZone = evt.Card.CurrentZone;
-            CardZone exhaustPile = ZoneRegistry.Get(ZoneId.PlayerExhaustPile);
+            CardZone exhaustPile = context?.Zones?.Get(ZoneId.PlayerExhaustPile);
 
             if (boardZone != null && evt.Card.CurrentZoneId.HasValue && evt.Card.CurrentZoneId.Value.IsBoard() && boardZone.Contains(evt.Card))
             {
                 if (evt.Card.Owner == CardOwner.Player && exhaustPile != null)
                 {
-                    ZoneTransferService.MoveCard(evt.Card, exhaustPile, true, boardZone);
+                    context?.ZoneTransfers?.MoveCard(evt.Card, exhaustPile, boardZone);
                 }
                 else
                 {
-                    boardZone.RemoveCard(evt.Card, true);
+                    boardZone.RemoveCard(evt.Card);
                 }
             }
         }
