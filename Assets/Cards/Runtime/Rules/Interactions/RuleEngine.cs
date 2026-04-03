@@ -71,7 +71,10 @@ namespace Cards.Rules.Interactions
                 }
             }
 
-            if (!request.IsHandled && !request.IsCancelled && request.TargetZone != null)
+            if (!request.IsHandled &&
+                !request.IsCancelled &&
+                request.TargetZone != null &&
+                request.Type != InteractionType.Attack)
             {
                 DefaultMoveCard(request);
             }
